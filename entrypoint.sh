@@ -160,7 +160,6 @@ wait_for_workflow_to_finish() {
 
   while [[ "${conclusion}" == "null" && "${status}" != "completed" ]]
   do
-    echo "== Sleeping for \"${wait_interval}\" seconds"
     sleep "${wait_interval}"
 
     workflow=$(api "runs/$last_workflow_id")
@@ -173,7 +172,7 @@ wait_for_workflow_to_finish() {
 
   if [[ "${conclusion}" == "success" && "${status}" == "completed" ]]
   then
-    echo "== Yes, success"
+    echo "== Status is [completed]. All done!"
   else
     # Alternative "failure"
     echo "Conclusion is not success, it's [${conclusion}]."
