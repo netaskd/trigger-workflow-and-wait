@@ -107,6 +107,7 @@ wait_for_workflow_to_finish() {
   do
     echo "== Using the following params to filter the workflow runs to get the triggered run id -"
     echo "== Query params: ${query}"
+    echo "== Will check status every \"${wait_interval}\" seconds"
     last_workflow=$(curl -4sL -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs?${query}" \
       -H 'Accept: application/vnd.github.antiope-preview+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" | jq '[.workflow_runs[]] | first')
@@ -129,7 +130,7 @@ wait_for_workflow_to_finish() {
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" | jq '.workflow_runs[] | select(.id == '${last_workflow_id}')')
     conclusion=$(echo "${workflow}" | jq '.conclusion')
     status=$(echo "${workflow}" | jq '.status')
-    echo "== Checking status [${status}] every \"${wait_interval}\" seconds"
+    echo "== Status is [${status}]"
   done
 
   if [[ "${conclusion}" == "\"success\"" && "${status}" == "\"completed\"" ]]
