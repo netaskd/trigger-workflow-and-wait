@@ -47,21 +47,21 @@ validate_args() {
 
   if [ -z "${INPUT_OWNER}" ]
   then
-    echo "Error: Owner is a required argument."
+    echo "== Error: Owner is a required argument."
     usage_docs
     exit 1
   fi
 
   if [ -z "${INPUT_REPO}" ]
   then
-    echo "Error: Repo is a required argument."
+    echo "== Error: Repo is a required argument."
     usage_docs
     exit 1
   fi
 
   if [ -z "${INPUT_GITHUB_TOKEN}" ]
   then
-    echo "Error: Github token is required. You can head over settings and"
+    echo "== Error: Github token is required. You can head over settings and"
     echo "under developer, you can create a personal access tokens. The"
     echo "token requires repo access."
     usage_docs
@@ -70,7 +70,7 @@ validate_args() {
 
   if [ -z "${INPUT_WORKFLOW_FILE_NAME}" ]
   then
-    echo "Error: Workflow File Name is required"
+    echo "== Error: Workflow File Name is required"
     usage_docs
     exit 1
   fi
@@ -160,7 +160,7 @@ wait_for_workflow_to_finish() {
 
   while [[ "${conclusion}" == "null" && "${status}" != "completed" ]]
   do
-    echo "Sleeping for \"${wait_interval}\" seconds"
+    echo "== Sleeping for \"${wait_interval}\" seconds"
     sleep "${wait_interval}"
 
     workflow=$(api "runs/$last_workflow_id")
@@ -173,14 +173,14 @@ wait_for_workflow_to_finish() {
 
   if [[ "${conclusion}" == "success" && "${status}" == "completed" ]]
   then
-    echo "Yes, success"
+    echo "== Yes, success"
   else
     # Alternative "failure"
     echo "Conclusion is not success, it's [${conclusion}]."
 
     if [ "${propagate_failure}" = true ]
     then
-      echo "Propagating failure to upstream job"
+      echo "== Propagating failure to upstream job"
       exit 1
     fi
   fi
@@ -193,7 +193,7 @@ main() {
   then
     run_ids=$(trigger_workflow)
   else
-    echo "Skipping triggering the workflow."
+    echo "== Skipping triggering the workflow."
   fi
 
   if [ "${wait_workflow}" = true ]
@@ -203,7 +203,7 @@ main() {
       wait_for_workflow_to_finish "$run_id"
     done
   else
-    echo "Skipping waiting for workflow."
+    echo "== Skipping waiting for workflow."
   fi
 }
 
