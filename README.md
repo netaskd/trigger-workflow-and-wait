@@ -39,7 +39,7 @@ When deploying an app you may need to deploy additional services, this Github Ac
 ### All Options
 
 ```yaml
-- uses: netasjd/trigger-workflow-and-wait@master
+- uses: netaskd/trigger-workflow-and-wait@master
   with:
     owner: keithconvictional
     repo: myrepo
