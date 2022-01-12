@@ -172,7 +172,7 @@ wait_for_workflow_to_finish() {
 
   if [[ "${conclusion}" == "success" && "${status}" == "completed" ]]
   then
-    echo "== Status is [completed]. All done!"
+    echo "== Success. All done!"
   else
     # Alternative "failure"
     echo "Conclusion is not success, it's [${conclusion}]."
