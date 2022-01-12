@@ -90,7 +90,7 @@ trigger_workflow() {
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
     --data "{\"ref\":\"${ref}\",\"inputs\":${inputs}}"
-  echo "== Sleeping for ${wait_interval} seconds"
+  echo "== Sleeping for ${wait_interval} seconds before start checking"
   sleep $wait_interval
 }
 
@@ -123,19 +123,18 @@ wait_for_workflow_to_finish() {
 
   while [[ "${conclusion}" == "null" && "${status}" != "\"completed\"" ]]
   do
-    echo "== Sleeping for \"${wait_interval}\" seconds"
     sleep "${wait_interval}"
     workflow=$(curl -4sL -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs" \
       -H 'Accept: application/vnd.github.antiope-preview+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" | jq '.workflow_runs[] | select(.id == '${last_workflow_id}')')
     conclusion=$(echo "${workflow}" | jq '.conclusion')
     status=$(echo "${workflow}" | jq '.status')
-    echo "== Checking conclusion [${conclusion}], status [${status}]"
+    echo "== Checking status [${status}] every \"${wait_interval}\" seconds"
   done
 
   if [[ "${conclusion}" == "\"success\"" && "${status}" == "\"completed\"" ]]
   then
-    echo "== Yes, success"
+    echo "== Status is [completed]. All done!"
   else
     # Alternative "failure"
     echo "== Conclusion is not success, its [${conclusion}]."
