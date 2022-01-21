@@ -16,9 +16,9 @@ GITHUB_SERVER_URL="${SERVER_URL:-https://github.com}"
 
 validate_args() {
   wait_interval=10 # Waits for 10 seconds
-  if [ "${INPUT_WAITING_INTERVAL}" ]
+  if [ "${INPUT_WAIT_INTERVAL}" ]
   then
-    wait_interval=${INPUT_WAITING_INTERVAL}
+    wait_interval=${INPUT_WAIT_INTERVAL}
   fi
 
   propagate_failure=true
