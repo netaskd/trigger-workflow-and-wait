@@ -103,7 +103,7 @@ wait_for_workflow_to_finish() {
   fi
   last_workflow="null"
   while [[ "$last_workflow" == "null" ]]; do
-    echo "== Using the following params to filter the workflow runs to get the triggered run id -"
+    echo "== Using the following params to filter the workflow runs to get the triggered run id."
     echo "== Query params: ${query}"
     echo "== Will check status every \"${wait_interval}\" seconds"
     last_workflow=$(curl -4sL --show-error --fail -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs?${query}" \
