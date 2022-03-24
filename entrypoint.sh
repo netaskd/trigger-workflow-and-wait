@@ -102,14 +102,16 @@ wait_for_workflow_to_finish() {
     query="${query}&actor=${INPUT_GITHUB_USER}"
   fi
   last_workflow="null"
-  while [[ "$last_workflow" == "null" ]]
-  do
+  while [[ "$last_workflow" == "null" ]]; do
     echo "== Using the following params to filter the workflow runs to get the triggered run id -"
     echo "== Query params: ${query}"
     echo "== Will check status every \"${wait_interval}\" seconds"
     last_workflow=$(curl -4sL --show-error --fail -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs?${query}" \
       -H 'Accept: application/vnd.github.antiope-preview+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" | jq '[.workflow_runs[]] | first')
+    if [[ "$last_workflow" == "null" ]]; then
+      sleep ${wait_interval}
+    fi
   done
   last_workflow_id=$(echo "${last_workflow}" | jq '.id')
   last_workflow_url="${GITHUB_SERVER_URL}/${INPUT_OWNER}/${INPUT_REPO}/actions/runs/${last_workflow_id}"
