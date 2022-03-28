@@ -162,8 +162,7 @@ trigger_workflow() {
     --data "{\"ref\":\"${ref}\",\"inputs\":${client_payload}}"
 
   NEW_RUNS=$OLD_RUNS
-  while [ "$NEW_RUNS" = "$OLD_RUNS" ]
-  do
+  while [ "$NEW_RUNS" = "$OLD_RUNS" ]; do
     echo >&2 "Sleeping for ${wait_interval} seconds"
     sleep "$wait_interval"
     NEW_RUNS=$(get_workflow_runs "$SINCE")
@@ -176,10 +175,8 @@ trigger_workflow() {
 wait_for_workflow_to_finish() {
   last_workflow_id=${1:?}
   last_workflow_url="${GITHUB_SERVER_URL}/${INPUT_OWNER}/${INPUT_REPO}/actions/runs/${last_workflow_id}"
-
-  echo "Waiting for workflow to finish:"
-  echo "The workflow id is [${last_workflow_id}]."
-  echo "The workflow logs can be found at ${last_workflow_url}"
+  echo "== The workflow id is [${last_workflow_id}]."
+  echo "== The workflow logs can be found at ${last_workflow_url}"
   echo "::set-output name=workflow_id::${last_workflow_id}"
   echo "::set-output name=workflow_url::${last_workflow_url}"
   echo ""
@@ -187,27 +184,20 @@ wait_for_workflow_to_finish() {
   conclusion=null
   status=
 
-  while [[ "${conclusion}" == "null" && "${status}" != "completed" ]]
-  do
+  while [[ "${conclusion}" == "null" && "${status}" != "completed" ]]; do
     sleep "${wait_interval}"
-
     workflow=$(api "runs/$last_workflow_id")
     conclusion=$(echo "${workflow}" | jq -r '.conclusion')
-    status=$(echo "${workflow}" | jq -r '.status')
-
-    echo "Checking conclusion [${conclusion}]"
-    echo "Checking status [${status}]"
+    status=$(echo "${workflow}" | jq -r '.status')    
+    echo "== Status is [${status}]"
   done
 
-  if [[ "${conclusion}" == "success" && "${status}" == "completed" ]]
-  then
+  if [[ "${conclusion}" == "success" && "${status}" == "completed" ]]; then
     echo "== Success. All done!"
   else
     # Alternative "failure"
-    echo "Conclusion is not success, it's [${conclusion}]."
-
-    if [ "${propagate_failure}" = true ]
-    then
+    echo "== Conclusion is not success, its [${conclusion}]."
+    if [ "${propagate_failure}" = true ]; then
       echo "== Propagating failure to upstream job"
       exit 1
     fi

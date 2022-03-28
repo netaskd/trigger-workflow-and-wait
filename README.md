@@ -59,7 +59,7 @@ Trigger event and wait the latest workflow
 ### All Options
 
 ```yaml
-- uses: convictional/trigger-workflow-and-wait@v1.6.0
+- uses: netaskd/trigger-workflow-and-wait@master
   with:
     owner: netaskd
     repo: my-repo
@@ -129,7 +129,7 @@ You can see the example [here](https://github.com/keithconvictional/trigger-work
 If you do not want the latest build all of the time, please use a versioned copy of the Github Action. You specify the version after the `@` sign.
 
 ```yaml
-- uses: convictional/trigger-workflow-and-wait@v1.6.0
+- uses: netaskd/trigger-workflow-and-wait@master
   with:
     owner: netaskd
     repo: my-repo
