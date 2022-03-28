@@ -93,7 +93,7 @@ trigger_event() {
     -H "Accept: application/vnd.github.v3+json" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
-    --data "{\"event_type\":\"${event_type}\",\"event_payload\":${event_payload}}"
+    --data "{\"event_type\":\"${event_type}\",\"client_payload\":${event_payload}}"
   echo "== Sleeping for 10 seconds before start checking"
   sleep 10
 }
