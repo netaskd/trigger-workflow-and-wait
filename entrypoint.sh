@@ -4,10 +4,10 @@ set -e
 usage_docs() {
   echo ""
   echo "You can use this Github Action with:"
-  echo "- uses: convictional/trigger-workflow-and-wait"
+  echo "- uses: netaskd/trigger-workflow-and-wait"
   echo "  with:"
-  echo "    owner: keithconvictional"
-  echo "    repo: myrepo"
+  echo "    owner: netaskd"
+  echo "    repo: my-repo"
   echo "    github_token: \${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}"
   echo "    workflow_file_name: main.yaml"
 }
@@ -25,6 +25,12 @@ validate_args() {
   if [ -n "${INPUT_PROPAGATE_FAILURE}" ]
   then
     propagate_failure=${INPUT_PROPAGATE_FAILURE}
+  fi
+
+  trigger_event=false
+  if [ -n "${INPUT_TRIGGER_EVENT}" ]
+  then
+    trigger_event=${INPUT_TRIGGER_EVENT}
   fi
 
   trigger_workflow=true
@@ -86,6 +92,29 @@ validate_args() {
   then
     ref="${INPUT_REF}"
   fi
+
+  event_type="deploy"
+  if [ "$INPUT_EVENT_TYPE" ]
+  then
+    event_type="${INPUT_EVENT_TYPE}"
+  fi
+
+  event_payload=$(echo '{}' | jq)
+  if [ "${INPUT_EVENT_PAYLOAD}" ]
+  then
+    event_payload=$(echo "${INPUT_EVENT_PAYLOAD}" | jq)
+  fi
+}
+
+trigger_event() {
+  echo "Send event ${event_type} to ${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/dispatches"
+  curl -4sL --show-error --fail -X POST "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/dispatches" \
+    -H "Accept: application/vnd.github.v3+json" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
+    --data "{\"event_type\":\"${event_type}\",\"event_payload\":${event_payload}}"
+  echo "== Sleeping for 10 seconds before start checking"
+  sleep 10
 }
 
 api() {
@@ -193,6 +222,13 @@ main() {
     run_ids=$(trigger_workflow)
   else
     echo "== Skipping triggering the workflow."
+  fi
+
+  if [ "${trigger_event}" = true ]
+  then
+    trigger_event
+  else
+    echo "== Skipping triggering the event."
   fi
 
   if [ "${wait_workflow}" = true ]

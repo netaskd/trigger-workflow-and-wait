@@ -6,7 +6,6 @@ Github Action for trigger a workflow from another workflow. The action then wait
 
 When deploying an app you may need to deploy additional services, this Github Action helps with that.
 
-
 ## Arguments
 
 | Argument Name            | Required   | Default     | Description           |
@@ -23,17 +22,37 @@ When deploying an app you may need to deploy additional services, this Github Ac
 | `trigger_workflow`       | False      | `true`      | Trigger the specified workflow. |
 | `wait_workflow`          | False      | `true`      | Wait for workflow to finish. |
 | `last_workflow_interval` | False      | 0           | The number of seconds delay between checking for the last workflow. default: 0 |
-
+| `trigger_event`       | False      | `false`     | Trigger the specified event. |
+| `event_payload`       | False      | `{}`        | Payload to pass to the repository_event, must be a JSON string |
+| `event_type`          | False      | deploy      | The type of event to pass to the repository_event |
 
 ## Example
 
 ### Simple
 
+Trigger workflow and wait the workflow
+
 ```yaml
 - uses: convictional/trigger-workflow-and-wait@v1.6.0
   with:
-    owner: keithconvictional
-    repo: myrepo
+    owner: netaskd
+    repo: my-repo
+    github_token: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+```
+
+Trigger event and wait the latest workflow
+
+```yaml
+- uses: netaskd/trigger-workflow-and-wait@master
+  with:
+    owner: netaskd
+    repo: my-repo
+    trigger_event: true
+    event_type: deploy
+    event_payload: '{}'
+    trigger_workflow: false
+    wait_workflow: true
+    workflow_file_name: main.yml
     github_token: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
 ```
 
@@ -42,8 +61,8 @@ When deploying an app you may need to deploy additional services, this Github Ac
 ```yaml
 - uses: convictional/trigger-workflow-and-wait@v1.6.0
   with:
-    owner: keithconvictional
-    repo: myrepo
+    owner: netaskd
+    repo: my-repo
     github_token: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
     github_user: github-user
     workflow_file_name: main.yml
@@ -52,10 +71,10 @@ When deploying an app you may need to deploy additional services, this Github Ac
     client_payload: '{}'
     propagate_failure: false
     trigger_workflow: true
+    trigger_event: false
     wait_workflow: true
     last_workflow_interval: 1
 ```
-
 
 ## Testing
 
@@ -112,7 +131,7 @@ If you do not want the latest build all of the time, please use a versioned copy
 ```yaml
 - uses: convictional/trigger-workflow-and-wait@v1.6.0
   with:
-    owner: keithconvictional
-    repo: myrepo
+    owner: netaskd
+    repo: my-repo
     github_token: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
 ```
