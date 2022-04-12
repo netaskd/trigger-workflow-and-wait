@@ -80,6 +80,9 @@ validate_args() {
   then
     ref="${INPUT_REF}"
   fi
+  
+  max_count=180
+  wait_timeout=$(echo ${max_count}*${wait_interval} | bc)
 }
 
 trigger_workflow() {
@@ -96,19 +99,32 @@ trigger_workflow() {
 wait_for_workflow_to_finish() {
   # Find the id of the last run using filters to identify the workflow triggered by this action
   echo "== Getting the ID of the workflow..."
-  query="event=workflow_dispatch&status=queued"
-  if [ "$INPUT_GITHUB_USER" ]
-  then
-    query="${query}&actor=${INPUT_GITHUB_USER}"
-  fi
+  query="event=workflow_dispatch"
+#   if [ "$INPUT_GITHUB_USER" ]
+#   then
+#     query="${query}&actor=${INPUT_GITHUB_USER}"
+#   fi
   last_workflow="null"
+  count=0
   while [[ "$last_workflow" == "null" ]]; do
+    count=$(($count+1))    
     echo "== Using the following params to filter the workflow runs to get the triggered run id."
     echo "== Query params: ${query}"
     echo "== Will check status every \"${wait_interval}\" seconds"
+    
+    echo "== debug"
+    curl -4sL --show-error --fail -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs?${query}" \
+      -H 'Accept: application/vnd.github.v3+json' \
+      -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}"
+    echo curl -4sL --show-error --fail -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs?${query}" \
+      -H 'Accept: application/vnd.github.v3+json' \
+      -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}"
+    
+    
     last_workflow=$(curl -4sL --show-error --fail -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs?${query}" \
-      -H 'Accept: application/vnd.github.antiope-preview+json' \
+      -H 'Accept: application/vnd.github.v3+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" | jq '[.workflow_runs[]] | first')
+    [ ${count} -ge ${max_count} ] && echo "ERR: timeout ${wait_timeout}s is reached" && exit 1
     if [[ "$last_workflow" == "null" ]]; then
       sleep ${wait_interval}
     fi
@@ -127,7 +143,7 @@ wait_for_workflow_to_finish() {
   do
     sleep "${wait_interval}"
     workflow=$(curl -4sL --show-error --fail -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs" \
-      -H 'Accept: application/vnd.github.antiope-preview+json' \
+      -H 'Accept: application/vnd.github.v3+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" | jq '.workflow_runs[] | select(.id == '${last_workflow_id}')')
     conclusion=$(echo "${workflow}" | jq '.conclusion')
     status=$(echo "${workflow}" | jq '.status')
