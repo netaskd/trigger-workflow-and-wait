@@ -123,6 +123,7 @@ wait_for_workflow_to_finish() {
     count=$(($count+1))
     [ ${count} -ge ${max_count} ] && echo "ERR: timeout ${wait_timeout}s is reached" && exit 1
 
+    echo "== last workflow is ${last_workflow}"
     if [[ "$last_workflow" == "null" ]]; then
       sleep ${wait_interval}
     fi
