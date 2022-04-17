@@ -106,8 +106,8 @@ wait_for_workflow_to_finish() {
     | jq -r '.workflows[] | select (.path==".github/workflows/'${INPUT_WORKFLOW_FILE_NAME}'") | .id' \
   )
 
-  last_workflow="null"; count=0
-  while [[ "$last_workflow" == "null" ]]; do
+  last_workflow=""; count=0
+  while [[ "${last_workflow}" == "" ]]; do
 
     echo "== Using the following params to filter the workflow runs to get the triggered run id."
     echo "== Workflow id: ${workflow_id}"
@@ -123,8 +123,7 @@ wait_for_workflow_to_finish() {
     count=$(($count+1))
     [ ${count} -ge ${max_count} ] && echo "ERR: timeout ${wait_timeout}s is reached" && exit 1
 
-    echo "== last workflow is ${last_workflow}"
-    if [[ "$last_workflow" == "null" ]]; then
+    if [[ "$last_workflow" == "" ]]; then
       sleep ${wait_interval}
     fi
 
