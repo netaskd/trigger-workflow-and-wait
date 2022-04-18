@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+
 set -e
 
 usage_docs() {
@@ -76,6 +77,9 @@ validate_args() {
     ref="${INPUT_REF}"
   fi
 
+  max_count=180
+  wait_timeout=$(echo ${max_count}*${wait_interval} | bc)
+
   event_type="deploy"
   if [ "$INPUT_EVENT_TYPE" ]; then
     event_type="${INPUT_EVENT_TYPE}"
@@ -99,7 +103,7 @@ trigger_event() {
 }
 
 trigger_workflow() {
-  echo "Run workflow ${INPUT_WORKFLOW_FILE_NAME} in ${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/dispatches"
+  echo "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/dispatches"
   curl -4sL --show-error --fail -X POST "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/dispatches" \
     -H "Accept: application/vnd.github.v3+json" \
     -H "Content-Type: application/json" \
@@ -112,23 +116,38 @@ trigger_workflow() {
 wait_for_workflow_to_finish() {
   # Find the id of the last run using filters to identify the workflow triggered by this action
   echo "== Getting the ID of the workflow..."
-  query="event=workflow_dispatch&status=queued"
-  if [ "$INPUT_GITHUB_USER" ]; then query="${query}&actor=${INPUT_GITHUB_USER}"; fi
-  last_workflow="null"
-  while [[ "$last_workflow" == "null" ]]; do
+  workflow_id=$(curl -4sL --show-error --fail -X GET \
+    -H 'Accept: application/vnd.github.v3+json' \
+    -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
+    "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows" \
+    | jq -r '.workflows[] | select (.path==".github/workflows/'${INPUT_WORKFLOW_FILE_NAME}'") | .id' \
+  )
+
+  last_workflow=""; count=0
+  while [[ "${last_workflow}" == "" ]]; do
+
     echo "== Using the following params to filter the workflow runs to get the triggered run id."
-    echo "== Query params: ${query}"
+    echo "== Workflow id: ${workflow_id}"
     echo "== Will check status every \"${wait_interval}\" seconds"
-    last_workflow=$(curl -4sL --show-error --fail -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs?${query}" \
-      -H 'Accept: application/vnd.github.antiope-preview+json' \
-      -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" | jq '[.workflow_runs[]] | first')
-    if [[ "$last_workflow" == "null" ]]; then
+
+    last_workflow=$(curl -4sL --show-error --fail -X GET \
+      -H 'Accept: application/vnd.github.v3+json' \
+      -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
+      "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs" \
+      | jq -r '.workflow_runs[] | select ((.event=="'"workflow_dispatch"'") and (.workflow_id=='${workflow_id}') and (.status=="'"queued"'"))' \
+    )
+
+    count=$(($count+1))
+    [ ${count} -ge ${max_count} ] && echo "ERR: timeout ${wait_timeout}s is reached" && exit 1
+
+    if [[ "$last_workflow" == "" ]]; then
       sleep ${wait_interval}
     fi
+
   done
   last_workflow_id=$(echo "${last_workflow}" | jq '.id')
   last_workflow_url="${GITHUB_SERVER_URL}/${INPUT_OWNER}/${INPUT_REPO}/actions/runs/${last_workflow_id}"
-  echo "== The workflow id is [${last_workflow_id}]."
+  echo "== The workflow run id is [${last_workflow_id}]."
   echo "== The workflow logs can be found at ${last_workflow_url}"
   echo "::set-output name=workflow_id::${last_workflow_id}"
   echo "::set-output name=workflow_url::${last_workflow_url}"
@@ -136,10 +155,11 @@ wait_for_workflow_to_finish() {
   conclusion=$(echo "${last_workflow}" | jq '.conclusion')
   status=$(echo "${last_workflow}" | jq '.status')
 
-  while [[ "${conclusion}" == "null" && "${status}" != "\"completed\"" ]]; do
+  while [[ "${conclusion}" == "null" && "${status}" != "\"completed\"" ]]
+  do
     sleep "${wait_interval}"
     workflow=$(curl -4sL --show-error --fail -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs" \
-      -H 'Accept: application/vnd.github.antiope-preview+json' \
+      -H 'Accept: application/vnd.github.v3+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" | jq '.workflow_runs[] | select(.id == '${last_workflow_id}')')
     conclusion=$(echo "${workflow}" | jq '.conclusion')
     status=$(echo "${workflow}" | jq '.status')
