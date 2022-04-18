@@ -137,11 +137,13 @@ wait_for_workflow_to_finish() {
 
   last_workflow_id=$(echo "${last_workflow}" | jq '.id')
   last_workflow_url="${GITHUB_SERVER_URL}/${INPUT_OWNER}/${INPUT_REPO}/actions/runs/${last_workflow_id}"
+
   echo "== The workflow run id is [${last_workflow_id}]."
   echo "== The workflow logs can be found at ${last_workflow_url}"
+
   echo "::set-output name=workflow_id::${last_workflow_id}"
   echo "::set-output name=workflow_url::${last_workflow_url}"
-  echo ""
+
   conclusion=$(echo "${last_workflow}" | jq '.conclusion')
   status=$(echo "${last_workflow}" | jq '.status')
 
