@@ -115,7 +115,7 @@ trigger_workflow() {
   sleep 10
 }
 
-wait_for_pipeline_to_finish() {
+wait_for_workflow_to_finish() {
   # Find the id of the last run using filters to identify the workflow triggered by this action
   echo "== Getting the ID of the workflow..."
   workflow_id=$(curl -4sL --show-error --fail -X GET \
@@ -196,7 +196,7 @@ main() {
   fi
 
   if [ "${wait_workflow}" = true ]; then
-    wait_for_pipeline_to_finish
+    wait_for_workflow_to_finish
   else
     echo "== Skipping waiting for workflow."
   fi
