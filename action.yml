@@ -29,8 +29,17 @@ inputs:
   inputs:
     description: 'Inputs to pass to the workflow, must be a JSON string'
     required: false
+  event_payload:
+    description: 'Payload to pass to the event, must be a JSON string'
+    required: false
   propagate_failure:
     description: 'Fail current job if downstream job fails. default: true'
+    required: false
+  trigger_event:
+    description: 'Trigger the specified event. default: false'
+    required: false
+  event_type:
+    description: 'The type of triggered event. default: deploy'
     required: false
   trigger_workflow:
     description: 'Trigger the specified workflow. default: true'

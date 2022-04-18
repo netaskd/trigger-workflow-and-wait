@@ -22,17 +22,37 @@ When deploying an app you may need to deploy additional services, this Github Ac
 | `propagate_failure`   | False      | `true`      | Fail current job if downstream job fails. |
 | `trigger_workflow`    | False      | `true`      | Trigger the specified workflow. |
 | `wait_workflow`       | False      | `true`      | Wait for workflow to finish. |
-
+| `trigger_event`       | False      | `false`     | Trigger the specified event. |
+| `event_payload`       | False      | `{}`        | Payload to pass to the repository_event, must be a JSON string |
+| `event_type`          | False      | deploy      | The type of event to pass to the repository_event |
 
 ## Example
 
 ### Simple
 
+Trigger workflow and wait the workflow
+
 ```yaml
 - uses: netaskd/trigger-workflow-and-wait@master
   with:
-    owner: keithconvictional
-    repo: myrepo
+    owner: netaskd
+    repo: my-repo
+    github_token: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+```
+
+Trigger event and wait the latest workflow
+
+```yaml
+- uses: netaskd/trigger-workflow-and-wait@master
+  with:
+    owner: netaskd
+    repo: my-repo
+    trigger_event: true
+    event_type: deploy
+    event_payload: '{}'
+    trigger_workflow: false
+    wait_workflow: true
+    workflow_file_name: main.yml
     github_token: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
 ```
 
@@ -41,8 +61,8 @@ When deploying an app you may need to deploy additional services, this Github Ac
 ```yaml
 - uses: netaskd/trigger-workflow-and-wait@master
   with:
-    owner: keithconvictional
-    repo: myrepo
+    owner: netaskd
+    repo: my-repo
     github_token: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
     github_user: github-user
     workflow_file_name: main.yml
@@ -51,6 +71,7 @@ When deploying an app you may need to deploy additional services, this Github Ac
     inputs: '{}'
     propagate_failure: false
     trigger_workflow: true
+    trigger_event: false
     wait_workflow: true
 ```
 
@@ -60,7 +81,7 @@ When deploying an app you may need to deploy additional services, this Github Ac
 You can test out the action locally by cloning the repository to your computer. You can run:
 
 ```shell
-INPUT_WAITING_INTERVAL=10 \
+  INPUT_WAITING_INTERVAL=10 \
   INPUT_PROPAGATE_FAILURE=false \
   INPUT_TRIGGER_WORKFLOW=true \
   INPUT_WORKFLOW_FILE_NAME="main.yml" \
@@ -113,7 +134,7 @@ If you do not want the latest build all of the time, please use a versioned copy
 ```yaml
 - uses: netaskd/trigger-workflow-and-wait@master
   with:
-    owner: keithconvictional
-    repo: myrepo
+    owner: netaskd
+    repo: my-repo
     github_token: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
 ```
