@@ -117,34 +117,15 @@ trigger_workflow() {
 
 wait_for_workflow_to_finish() {
   # Find the id of the last run using filters to identify the workflow triggered by this action
-  echo "== Getting the ID of the workflow..."
-  workflow_id=$(curl -4sL --show-error --fail -X GET \
-    -H 'Accept: application/vnd.github.v3+json' \
-    -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
-    "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows" \
-    | jq -r '.workflows[] | select (.path==".github/workflows/'${INPUT_WORKFLOW_FILE_NAME}'") | .id' \
-  )
-
   last_workflow=""; count=0
   while [[ "${last_workflow}" == "" ]]; do
-
-    echo "== Using the following params to filter the workflow runs to get the triggered run id."
-    echo "== Workflow id: ${workflow_id}"
     echo "== Will check status every \"${wait_interval}\" seconds"
-
     last_workflow=$(curl -4sL --show-error --fail -X GET \
       -H 'Accept: application/vnd.github.v3+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
       "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs" \
-      | jq -r '.workflow_runs[] | select ((.event=="'"${event_dispatch_type}"'") and (.workflow_id=='${workflow_id}') and ((.status=="'"in_progress"'") or (.status=="'"queued"'")))' \
+      | jq -r '.workflow_runs[] | select ((.event=="'"${event_dispatch_type}"'") and (.status=="'"queued"'"))' \
     )
-
-    echo "== ${last_workflow}"
-    echo "== ${event_dispatch_type}"
-    echo "== ${INPUT_WORKFLOW_FILE_NAME}"
-    echo "== ${workflow_id}"
-
-
 
     count=$(($count+1))
     [ ${count} -ge ${max_count} ] && echo "ERR: timeout ${wait_timeout}s is reached" && exit 1
@@ -152,8 +133,8 @@ wait_for_workflow_to_finish() {
     if [[ "$last_workflow" == "" ]]; then
       sleep ${wait_interval}
     fi
-
   done
+
   last_workflow_id=$(echo "${last_workflow}" | jq '.id')
   last_workflow_url="${GITHUB_SERVER_URL}/${INPUT_OWNER}/${INPUT_REPO}/actions/runs/${last_workflow_id}"
   echo "== The workflow run id is [${last_workflow_id}]."
@@ -177,6 +158,7 @@ wait_for_workflow_to_finish() {
 
   if [[ "${conclusion}" == "\"success\"" && "${status}" == "\"completed\"" ]]; then
     echo "== Success. All done!"
+    echo "== The workflow logs can be found at ${last_workflow_url}"
   else
     # Alternative "failure"
     echo "== Conclusion is not success, its [${conclusion}]."
