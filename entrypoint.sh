@@ -29,13 +29,11 @@ validate_args() {
   trigger_event=false
   if [ -n "${INPUT_TRIGGER_EVENT}" ]; then
     trigger_event=${INPUT_TRIGGER_EVENT}
-    event_dispatch_type="repository_dispatch"
   fi
 
   trigger_workflow=true
   if [ -n "${INPUT_TRIGGER_WORKFLOW}" ]; then
     trigger_workflow=${INPUT_TRIGGER_WORKFLOW}
-    event_dispatch_type="workflow_dispatch"
   fi
 
   wait_workflow=true
@@ -102,6 +100,7 @@ trigger_event() {
     --data "{\"event_type\":\"${event_type}\",\"client_payload\":${event_payload}}"
   echo "== Sleeping for 10 seconds before start checking"
   sleep 10
+  event_dispatch_type="repository_dispatch"
 }
 
 trigger_workflow() {
@@ -113,6 +112,7 @@ trigger_workflow() {
     --data "{\"ref\":\"${ref}\",\"inputs\":${inputs}}"
   echo "== Sleeping for 10 seconds before start checking"
   sleep 10
+  event_dispatch_type="workflow_dispatch"
 }
 
 wait_for_workflow_to_finish() {
@@ -136,11 +136,14 @@ wait_for_workflow_to_finish() {
       -H 'Accept: application/vnd.github.v3+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
       "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs" \
-      | jq -r '.workflow_runs[] | select ((.event=="'"${event_dispatch_type}"'") and (.workflow_id=='${workflow_id}') and (.status=="'"queued"'"))' \
+      | jq -r '.workflow_runs[] | select ((.event=="'"${event_dispatch_type}"'") and (.workflow_id=='${workflow_id}') and ((.status=="'"in_progress"'") or (.status=="'"queued"'")))' \
     )
 
-
     echo "== ${last_workflow}"
+    echo "== ${event_dispatch_type}"
+    echo "== ${INPUT_WORKFLOW_FILE_NAME}"
+    echo "== ${workflow_id}"
+
 
 
     count=$(($count+1))
