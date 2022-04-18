@@ -29,11 +29,13 @@ validate_args() {
   trigger_event=false
   if [ -n "${INPUT_TRIGGER_EVENT}" ]; then
     trigger_event=${INPUT_TRIGGER_EVENT}
+    event_dispatch_type="repository_dispatch"
   fi
 
   trigger_workflow=true
   if [ -n "${INPUT_TRIGGER_WORKFLOW}" ]; then
     trigger_workflow=${INPUT_TRIGGER_WORKFLOW}
+    event_dispatch_type="workflow_dispatch"
   fi
 
   wait_workflow=true
@@ -113,7 +115,7 @@ trigger_workflow() {
   sleep 10
 }
 
-wait_for_workflow_to_finish() {
+wait_for_pipeline_to_finish() {
   # Find the id of the last run using filters to identify the workflow triggered by this action
   echo "== Getting the ID of the workflow..."
   workflow_id=$(curl -4sL --show-error --fail -X GET \
@@ -134,7 +136,7 @@ wait_for_workflow_to_finish() {
       -H 'Accept: application/vnd.github.v3+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
       "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs" \
-      | jq -r '.workflow_runs[] | select ((.event=="'"workflow_dispatch"'") and (.workflow_id=='${workflow_id}') and (.status=="'"queued"'"))' \
+      | jq -r '.workflow_runs[] | select ((.event=="'"${event_dispatch_type}"'") and (.workflow_id=='${workflow_id}') and (.status=="'"queued"'"))' \
     )
 
     count=$(($count+1))
@@ -194,7 +196,7 @@ main() {
   fi
 
   if [ "${wait_workflow}" = true ]; then
-    wait_for_workflow_to_finish
+    wait_for_pipeline_to_finish
   else
     echo "== Skipping waiting for workflow."
   fi
