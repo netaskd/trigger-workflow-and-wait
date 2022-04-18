@@ -136,8 +136,12 @@ wait_for_workflow_to_finish() {
       -H 'Accept: application/vnd.github.v3+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
       "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs" \
-      | jq -r '.workflow_runs[] | select ((.event=="'"${event_dispatch_type}"'") and (.workflow_id=='${workflow_id}') and ((.status=="'"in_progress"'") or (.status=="'"queued"'")))' \
+      | jq -r '.workflow_runs[] | select ((.event=="'"${event_dispatch_type}"'") and (.workflow_id=='${workflow_id}') and (.status=="'"queued"'"))' \
     )
+
+
+    echo "== ${last_workflow}"
+
 
     count=$(($count+1))
     [ ${count} -ge ${max_count} ] && echo "ERR: timeout ${wait_timeout}s is reached" && exit 1
