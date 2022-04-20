@@ -128,7 +128,7 @@ wait_for_workflow_to_finish() {
     )
 
     count=$(($count+1))
-    [ ${count} -ge ${max_count} ] && echo "ERR: timeout ${wait_timeout}s is reached" && exit 1
+    [ ${count} -ge 6 ] && echo "ERR: timeout 60s is reached for queued workflow" && exit 1
 
     if [[ "$last_workflow" == "" ]]; then
       sleep ${wait_interval}
@@ -146,15 +146,17 @@ wait_for_workflow_to_finish() {
 
   conclusion=$(echo "${last_workflow}" | jq '.conclusion')
   status=$(echo "${last_workflow}" | jq '.status')
+  count=0
 
-  while [[ "${conclusion}" == "null" && "${status}" != "\"completed\"" ]]
-  do
+  while [[ "${conclusion}" == "null" && "${status}" != "\"completed\"" ]]; do  
     sleep "${wait_interval}"
     workflow=$(curl -4sL --show-error --fail -X GET "${GITHUB_API_URL}/repos/${INPUT_OWNER}/${INPUT_REPO}/actions/workflows/${INPUT_WORKFLOW_FILE_NAME}/runs" \
       -H 'Accept: application/vnd.github.v3+json' \
       -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" | jq '.workflow_runs[] | select(.id == '${last_workflow_id}')')
     conclusion=$(echo "${workflow}" | jq '.conclusion')
     status=$(echo "${workflow}" | jq '.status')
+    count=$(($count+1))
+    [ ${count} -ge ${max_count} ] && echo "ERR: timeout ${wait_timeout}s is reached" && exit 1
     echo "== Status is [${status}]"
   done
 
